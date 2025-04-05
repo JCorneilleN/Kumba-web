@@ -10,5 +10,4 @@ def test_firestore(request):
     return JsonResponse(user_list, safe=False)
 
 def home(request):
-    return HttpResponse("Welcome to Kumba Web App!")
-
+    return render(request, 'core/home.html')
