@@ -13,7 +13,10 @@ def test_firestore(request):
     return JsonResponse(user_list, safe=False)
 
 def home(request):
+    if not request.session.get("firebase_user"):
+        return redirect("login")
     return render(request, 'core/home.html')
+
 
 FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
 
@@ -64,3 +67,9 @@ def login_view(request):
         return redirect("home")
 
     return render(request, "core/login.html")
+
+def logout_view(request):
+    request.session.flush()
+    messages.success(request, "You have been logged out.")
+    return redirect("home")
+
