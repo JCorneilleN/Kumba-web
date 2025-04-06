@@ -26,6 +26,11 @@ def signup(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        gender = request.POST.get("gender")
+        school = request.POST.get("school")
+        dob = request.POST.get("dob")
 
         signup_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}"
         payload = {
@@ -41,10 +46,24 @@ def signup(request):
             messages.error(request, data["error"]["message"])
             return redirect("signup")
 
+        # Save user profile in Firestore
+        user_id = data.get("localId")
+        db.collection("users").document(user_id).set({
+            "first_name": first_name,
+            "last_name": last_name,
+            "gender": gender,
+            "school": school,
+            "dob": dob,
+            "email": email,
+            "user_id": user_id,
+        })
+
+        # Log in user
         request.session["firebase_user"] = data["idToken"]
         return redirect("home")
 
     return render(request, "core/signup.html")
+
 
 def login_view(request):
     if request.method == "POST":
