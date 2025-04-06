@@ -6,6 +6,16 @@ from django.contrib import messages
 import os
 import requests
 
+import csv
+from django.conf import settings
+
+def load_colleges():
+    csv_path = os.path.join(settings.BASE_DIR, 'core/static/core/colleges.csv')
+    with open(csv_path, newline='', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        return sorted([row[0] for row in reader if row])  # assumes 1 college per row
+
+
 def test_firestore(request):
     users_ref = db.collection('users')
     docs = users_ref.stream()
