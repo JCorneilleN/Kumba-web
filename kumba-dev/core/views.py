@@ -15,7 +15,9 @@ def test_firestore(request):
 def home(request):
     if not request.session.get("firebase_user"):
         return redirect("login")
-    return render(request, 'core/home.html')
+    rides = db.collection("rides").stream()
+    ride_list = [r.to_dict() for r in rides]
+    return render(request, 'core/home.html', {"rides": ride_list})
 
 
 FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
@@ -67,6 +69,27 @@ def login_view(request):
         return redirect("home")
 
     return render(request, "core/login.html")
+
+def post_ride(request):
+    if not request.session.get("firebase_user"):
+        return redirect("login")
+
+    if request.method == "POST":
+        data = {
+            "from": request.POST.get("from"),
+            "to": request.POST.get("to"),
+            "date": request.POST.get("date"),
+            "time": request.POST.get("time"),
+            "social": request.POST.get("social"),
+            "notes": request.POST.get("notes"),
+            "is_driver": bool(request.POST.get("is_driver")),
+            "user_id": "firebase_user",  # replace later with actual UID
+        }
+        db.collection("rides").add(data)
+        messages.success(request, "Ride posted!")
+        return redirect("home")
+
+    return render(request, "core/post_ride.html")
 
 def logout_view(request):
     request.session.flush()

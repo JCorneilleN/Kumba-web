@@ -1,0 +1,18 @@
+{% extends "core/base.html" %}
+{% block content %}
+<h2>Post a Ride</h2>
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3"><input class="form-control" name="from" placeholder="From" required></div>
+    <div class="mb-3"><input class="form-control" name="to" placeholder="To" required></div>
+    <div class="mb-3"><input class="form-control" name="date" type="date" required></div>
+    <div class="mb-3"><input class="form-control" name="time" type="time" required></div>
+    <div class="mb-3"><input class="form-control" name="social" placeholder="Instagram / WhatsApp" required></div>
+    <div class="mb-3"><textarea class="form-control" name="notes" placeholder="Extra info (optional)"></textarea></div>
+    <div class="form-check mb-3">
+        <input type="checkbox" class="form-check-input" name="is_driver" id="is_driver">
+        <label class="form-check-label" for="is_driver">I am a driver</label>
+    </div>
+    <button class="btn btn-primary">Post Ride</button>
+</form>
+{% endblock %}
