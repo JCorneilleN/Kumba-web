@@ -14,7 +14,10 @@ def load_colleges():
     csv_path = os.path.join(settings.BASE_DIR, 'core/static/core/colleges.csv')
     with open(csv_path, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
-        return sorted(set(row["INSTNM"] for row in reader if row.get("INSTNM")))
+        print("HEADERS:", reader.fieldnames)  # optional: to verify
+        return sorted(set(row["LocationName"] for row in reader if row.get("LocationName")))
+
+
 
 
 
