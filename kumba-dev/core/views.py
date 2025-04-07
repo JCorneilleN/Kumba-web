@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from django.contrib import messages
 import os
 import requests
+from datetime import datetime, date
 
 import csv
 from django.conf import settings
@@ -33,7 +34,10 @@ def home(request):
 FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
 
 def signup(request):
+    colleges = load_colleges()
+
     if request.method == "POST":
+        # Form fields
         email = request.POST.get("email")
         password = request.POST.get("password")
         first_name = request.POST.get("first_name")
@@ -42,6 +46,24 @@ def signup(request):
         school = request.POST.get("school")
         dob = request.POST.get("dob")
 
+        # Email must end with .edu
+        if not email.endswith(".edu"):
+            messages.error(request, "Only .edu email addresses are allowed.")
+            return redirect("signup")
+
+        # Must be at least 18 years old
+        try:
+            dob_obj = datetime.strptime(dob, "%Y-%m-%d").date()
+            today = date.today()
+            age = today.year - dob_obj.year - ((today.month, today.day) < (dob_obj.month, dob_obj.day))
+            if age < 18:
+                messages.error(request, "You must be at least 18 years old to sign up.")
+                return redirect("signup")
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+            return redirect("signup")
+
+        # Create Firebase Auth user
         signup_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}"
         payload = {
             "email": email,
@@ -56,8 +78,10 @@ def signup(request):
             messages.error(request, data["error"]["message"])
             return redirect("signup")
 
-        # Save user profile in Firestore
         user_id = data.get("localId")
+        id_token = data.get("idToken")
+
+        # Save profile in Firestore
         db.collection("users").document(user_id).set({
             "first_name": first_name,
             "last_name": last_name,
@@ -68,11 +92,17 @@ def signup(request):
             "user_id": user_id,
         })
 
-        # Log in user
-        request.session["firebase_user"] = data["idToken"]
-        return redirect("home")
+        # Send email verification
+        verify_url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={FIREBASE_API_KEY}"
+        requests.post(verify_url, json={
+            "requestType": "VERIFY_EMAIL",
+            "idToken": id_token
+        })
 
-    return render(request, "core/signup.html")
+        messages.success(request, "Account created! Check your .edu email to verify your account.")
+        return redirect("login")
+
+    return render(request, "core/signup.html", {"colleges": colleges})
 
 
 def login_view(request):

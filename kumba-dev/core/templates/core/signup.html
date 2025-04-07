@@ -13,7 +13,15 @@
             <option>Other</option>
         </select>
     </div>
-    <div class="mb-3"><input class="form-control" name="school" placeholder="School / University" required></div>
+    <div class="mb-3">
+        <input list="collegeList" name="school" class="form-control" placeholder="School / University" required>
+        <datalist id="collegeList">
+          {% for college in colleges %}
+            <option value="{{ college }}">
+          {% endfor %}
+        </datalist>
+      </div>
+      
     <div class="mb-3"><input class="form-control" name="dob" type="date" required></div>
     <div class="mb-3"><input class="form-control" name="email" placeholder="Email" type="email" required></div>
     <div class="mb-3"><input class="form-control" name="password" placeholder="Password" type="password" required></div>
