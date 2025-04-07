@@ -13,8 +13,9 @@ from django.conf import settings
 def load_colleges():
     csv_path = os.path.join(settings.BASE_DIR, 'core/static/core/colleges.csv')
     with open(csv_path, newline='', encoding='utf-8') as f:
-        reader = csv.reader(f)
-        return sorted([row[0] for row in reader if row])  # assumes 1 college per row
+        reader = csv.DictReader(f)
+        return sorted(set(row["INSTNM"] for row in reader if row.get("INSTNM")))
+
 
 
 def test_firestore(request):
@@ -101,6 +102,9 @@ def signup(request):
 
         messages.success(request, "Account created! Check your .edu email to verify your account.")
         return redirect("login")
+    
+    print("COLLEGES:", colleges[:5])  # Print first 5 colleges to confirm it's loading
+
 
     return render(request, "core/signup.html", {"colleges": colleges})
 
