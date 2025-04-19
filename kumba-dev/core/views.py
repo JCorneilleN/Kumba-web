@@ -20,7 +20,6 @@ def load_colleges():
 
 
 
-
 def test_firestore(request):
     users_ref = db.collection('users')
     docs = users_ref.stream()
@@ -107,6 +106,8 @@ def signup(request):
         return redirect("login")
     
     print("COLLEGES:", colleges[:5])  # Print first 5 colleges to confirm it's loading
+    print("FIREBASE SIGNUP RESPONSE:", data)
+
 
 
     return render(request, "core/signup.html", {"colleges": colleges})
