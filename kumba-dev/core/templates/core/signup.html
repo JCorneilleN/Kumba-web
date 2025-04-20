@@ -1,31 +1,31 @@
 {% extends "core/base.html" %}
 {% block content %}
-<h2>Create Account</h2>
-<form method="post">
+<div class="card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+  <h4 class="text-center mb-3">Create a new account</h4>
+  <form method="post">
     {% csrf_token %}
-    <div class="mb-3"><input class="form-control" name="first_name" placeholder="First Name" required></div>
-    <div class="mb-3"><input class="form-control" name="last_name" placeholder="Last Name" required></div>
-    <div class="mb-3">
-        <select name="gender" class="form-select" required>
-            <option value="">Select Gender</option>
-            <option>Female</option>
-            <option>Male</option>
-            <option>Other</option>
-        </select>
+    <input name="first_name" class="form-control mb-2" placeholder="First Name" required>
+    <input name="last_name" class="form-control mb-2" placeholder="Last Name" required>
+    <select name="gender" class="form-select mb-2" required>
+      <option value="">Gender</option>
+      <option>Female</option>
+      <option>Male</option>
+      <option>Other</option>
+    </select>
+    <div class="mb-3"> 
+      <input list="collegeList" name="school" class="form-control" placeholder="School / University" required>
+      <datalist id="collegeList">
+        {% for college in colleges %}
+          <option value="{{ college }}">
+        {% endfor %}
+      </datalist>
     </div>
-    <div class="mb-3">
-        <input list="collegeList" name="school" class="form-control" placeholder="School / University" required>
-        <datalist id="collegeList">
-          {% for college in colleges %}
-            <option value="{{ college }}">
-          {% endfor %}
-        </datalist>
-      </div>
-      
-    <div class="mb-3"><input class="form-control" name="dob" type="date" required></div>
-    <div class="mb-3"><input class="form-control" name="email" placeholder="Email" type="email" required></div>
-    <div class="mb-3"><input class="form-control" name="password" placeholder="Password" type="password" required></div>
-    <button class="btn btn-primary">Sign Up</button>
-</form>
+    
+    <input name="dob" class="form-control mb-2" type="date" required>
+    <input name="email" class="form-control mb-2" type="email" placeholder="Email (.edu required)" required>
+    <input name="password" class="form-control mb-2" type="password" placeholder="Password" required>
+    <button class="btn btn-primary w-100">Sign Up</button>
+  </form>
+</div>
 {% endblock %}
 
