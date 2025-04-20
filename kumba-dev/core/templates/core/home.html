@@ -1,28 +1,33 @@
 {% extends "core/base.html" %}
 {% block content %}
-<h2>Available Rides</h2>
-<a href="/post/" class="btn btn-success mb-3">Post a Ride</a>
+<div class="container my-4 text-center">
+  <div class="card shadow-sm p-4">
+    <h3 class="mb-3">Welcome, {{ name }}!</h3>
+    <p><strong>Email:</strong> {{ email }}</p>
+    <p><strong>Date of Birth:</strong> {{ dob }}</p>
 
-<div class="row">
-    {% for ride in rides %}
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">{{ ride.from }} → {{ ride.to }}</h5>
-                <p class="card-text">
-                    Date: {{ ride.date }} at {{ ride.time }}<br>
-                    {{ ride.notes }}<br>
-                    <strong>Contact:</strong> {{ ride.social }}<br>
-                    <span class="badge bg-{{ 'primary' if ride.is_driver else 'secondary' }}">
-                        {{ "Driver" if ride.is_driver else "Passenger" }}
-                    </span>
-                </p>
-            </div>
-        </div>
+    <div class="my-3">
+      <form method="post" action="{% url 'reset_password' %}">
+        {% csrf_token %}
+        <button class="btn btn-warning">Reset Password</button>
+      </form>
     </div>
-    {% empty %}
-    <p>No rides available yet.</p>
-    {% endfor %}
+
+    <div class="my-2">
+      <a href="{% url 'logout' %}" class="btn btn-danger">Log Out</a>
+    </div>
+
+    <hr class="my-4">
+    <h5>Map</h5>
+    <div class="ratio ratio-16x9">
+      <iframe
+        src="https://www.openstreetmap.org/export/embed.html"
+        style="border:1px solid black;"
+        allowfullscreen
+        loading="lazy">
+      </iframe>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
