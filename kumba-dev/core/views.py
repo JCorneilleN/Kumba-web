@@ -139,6 +139,42 @@ def verify_code(request):
     return render(request, "core/verify.html")
 
 
+def login_view(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+
+        login_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+        payload = {
+            "email": email,
+            "password": password,
+            "returnSecureToken": True
+        }
+
+        res = requests.post(login_url, json=payload)
+        data = res.json()
+
+        if "error" in data:
+            messages.error(request, "Invalid credentials. Please try again.")
+            return render(request, "core/login.html")
+
+        user_id = data.get("localId")
+        user_doc = db.collection("users").document(user_id).get()
+        if not user_doc.exists:
+            messages.error(request, "User record not found.")
+            return render(request, "core/login.html")
+
+        user_data = user_doc.to_dict()
+        request.session["firebase_user"] = data["idToken"]
+        request.session["user_name"] = f"{user_data['first_name']} {user_data['last_name']}"
+        request.session["dob"] = user_data["dob"]
+        request.session["email"] = user_data["email"]
+
+        return redirect("home")
+
+    return render(request, "core/login.html")
+
+
 def home(request):
     if not request.session.get("firebase_user"):
         return redirect("login")
@@ -149,4 +185,31 @@ def home(request):
         "email": request.session.get("email")
     }
     return render(request, "core/home.html", context)
+
+
+def logout_view(request):
+    request.session.flush()
+    return redirect("login")
+
+
+def reset_password(request):
+    if request.method == "POST":
+        email = request.session.get("email")
+        if not email:
+            messages.error(request, "Session expired. Please log in again.")
+            return redirect("login")
+
+        payload = {
+            "requestType": "PASSWORD_RESET",
+            "email": email
+        }
+        url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={FIREBASE_API_KEY}"
+        response = requests.post(url, json=payload)
+
+        if response.status_code == 200:
+            messages.success(request, "Password reset email sent.")
+        else:
+            messages.error(request, "Failed to send reset email.")
+
+        return redirect("home")
 
