@@ -88,6 +88,7 @@ def signup(request):
 
     return render(request, "core/signup.html", {"colleges": colleges})
 
+
 def verify_code(request):
     if request.method == "POST":
         input_code = request.POST.get("code")
@@ -136,4 +137,16 @@ def verify_code(request):
         return redirect("home")
 
     return render(request, "core/verify.html")
+
+
+def home(request):
+    if not request.session.get("firebase_user"):
+        return redirect("login")
+
+    context = {
+        "name": request.session.get("user_name"),
+        "dob": request.session.get("dob"),
+        "email": request.session.get("email")
+    }
+    return render(request, "core/home.html", context)
 
