@@ -213,3 +213,5 @@ def reset_password(request):
 
         return redirect("home")
 
+print("Loaded SENDGRID_API_KEY:", repr(os.getenv("SENDGRID_API_KEY")))
+
