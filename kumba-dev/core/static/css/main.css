@@ -1,0 +1,23 @@
+
+/* Ensure our vh-100 centering works across all pages */
+.vh-100 {
+    height: 100vh !important;
+  }
+  
+  /* Style for the map iframe to be fully responsive */
+  .map-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  }
+  
+  .map-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+  }
+  
