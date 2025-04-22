@@ -28,7 +28,7 @@ def generate_verification_code():
 def send_verification_email(email, code):
     try:
         message = Mail(
-            from_email='no-reply@kumbaapp.com',
+            from_email='corneillengoy@gmail.com',
             to_emails=email,
             subject='Verify your Kumba account',
             plain_text_content=f'Your verification code is: {code}'
