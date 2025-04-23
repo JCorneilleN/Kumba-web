@@ -27,5 +27,5 @@ firebase_admin.initialize_app(cred, {
 
 db = firestore.client()
 bucket = storage.bucket()
-print("PRIVATE_KEY from env:", os.getenv("FIREBASE_PRIVATE_KEY"))
+
 

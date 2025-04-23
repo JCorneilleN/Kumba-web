@@ -1,7 +1,6 @@
 {% extends "core/base.html" %}
 {% load static %}
 
-
 {% block content %}
 <div class="container my-4">
   <h2 class="mb-4">Available Rides</h2>
@@ -11,6 +10,18 @@
         <div class="col-md-6">
           <div class="card h-100 shadow-sm">
             <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                {% if ride.profile_picture %}
+                  <img src="{{ ride.profile_picture }}" class="rounded-circle me-3" style="width:48px; height:48px;">
+                {% else %}
+                  <div class="bg-secondary rounded-circle me-3" style="width:48px; height:48px;"></div>
+                {% endif %}
+                <div>
+                  <strong>{{ ride.first_name }}</strong><br>
+                  {{ ride.gender }}, Age {{ ride.age }}<br>
+                  {{ ride.school }}
+                </div>
+              </div>
               <h5 class="card-title">{{ ride.origin }} → {{ ride.destination }}</h5>
               <p class="card-text">
                 📅 {{ ride.date }} &nbsp;⏰ {{ ride.time }}<br>

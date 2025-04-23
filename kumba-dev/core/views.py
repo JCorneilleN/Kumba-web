@@ -8,8 +8,8 @@ from sendgrid.helpers.mail import Mail
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.conf import settings
-from firebase_admin import auth as firebase_auth  # if needed
-from .firebase import db
+from firebase_admin import auth as firebase_auth, storage as firebase_storage
+from .firebase import db, bucket
 
 FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
@@ -51,11 +51,9 @@ def signup(request):
         email = request.POST.get("email")
         password = request.POST.get("password")
 
-        # Validate .edu email
         if not email.lower().endswith('.edu'):
             messages.error(request, "Only .edu email addresses are allowed.")
             return render(request, "core/signup.html", {"colleges": colleges})
-        # Validate age >=18
         try:
             dob_obj = datetime.strptime(dob, "%Y-%m-%d").date()
             today = date.today()
@@ -67,11 +65,9 @@ def signup(request):
             messages.error(request, "Invalid date format.")
             return render(request, "core/signup.html", {"colleges": colleges})
 
-        # Send verification code
         code = generate_verification_code()
         send_verification_email(email, code)
 
-        # Store pending user in session
         request.session['pending_user'] = {
             'first_name': first_name,
             'last_name': last_name,
@@ -96,20 +92,14 @@ def verify_code(request):
         if input_code != pending.get('code'):
             messages.error(request, "Incorrect verification code.")
             return redirect('verify_code')
-        # Create Firebase Auth user
         signup_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}"
-        payload = {
-            'email': pending['email'],
-            'password': pending['password'],
-            'returnSecureToken': True
-        }
+        payload = {'email': pending['email'], 'password': pending['password'], 'returnSecureToken': True}
         res = requests.post(signup_url, json=payload)
         data = res.json()
         if 'error' in data:
             messages.error(request, data['error']['message'])
             return redirect('signup')
         user_id = data.get('localId')
-        # Save profile to Firestore
         db.collection('users').document(user_id).set({
             'first_name': pending['first_name'],
             'last_name': pending['last_name'],
@@ -117,11 +107,11 @@ def verify_code(request):
             'school': pending['school'],
             'dob': pending['dob'],
             'email': pending['email'],
-            'user_id': user_id
+            'user_id': user_id,
+            'profile_picture': ''
         })
-        # Store in session
         request.session['firebase_user'] = data.get('idToken')
-        request.session['user_id'] = user_id  # <-- store user_id here
+        request.session['user_id'] = user_id
         request.session['user_name'] = f"{pending['first_name']} {pending['last_name']}"
         request.session['dob'] = pending['dob']
         request.session['email'] = pending['email']
@@ -148,7 +138,7 @@ def login_view(request):
             return render(request, 'core/login.html')
         user_data = user_doc.to_dict()
         request.session['firebase_user'] = data.get('idToken')
-        request.session['user_id'] = user_id  # <-- store on login as well
+        request.session['user_id'] = user_id
         request.session['user_name'] = f"{user_data['first_name']} {user_data['last_name']}"
         request.session['dob'] = user_data['dob']
         request.session['email'] = user_data['email']
@@ -159,12 +149,11 @@ def login_view(request):
 def home(request):
     if not request.session.get('firebase_user'):
         return redirect('login')
-    context = {
+    return render(request, 'core/home.html', {
         'name': request.session.get('user_name'),
         'dob': request.session.get('dob'),
-        'email': request.session.get('email')
-    }
-    return render(request, 'core/home.html', context)
+        'email': request.session.get('email'),
+    })
 
 
 def logout_view(request):
@@ -194,16 +183,16 @@ def post_ride(request):
     if request.method == 'POST':
         origin = request.POST.get('origin')
         destination = request.POST.get('destination')
-        date = request.POST.get('date')
-        time = request.POST.get('time')
+        date_str = request.POST.get('date')
+        time_str = request.POST.get('time')
         seats = int(request.POST.get('seats'))
         notes = request.POST.get('notes', '')
-        user_id = request.session.get('user_id')  # <-- retrieved from session
+        user_id = request.session.get('user_id')
         ride_data = {
             'origin': origin,
             'destination': destination,
-            'date': date,
-            'time': time,
+            'date': date_str,
+            'time': time_str,
             'seats': seats,
             'notes': notes,
             'driver_id': user_id,
@@ -211,31 +200,64 @@ def post_ride(request):
         }
         db.collection('rides').add(ride_data)
         messages.success(request, "Ride posted successfully!")
-        return redirect('home')
+        return redirect('list_rides')
     return render(request, 'core/post_ride.html')
+
 
 def list_rides(request):
     if not request.session.get('firebase_user'):
         return redirect('login')
-
-    # Fetch rides where date is today or in the future
     rides_ref = db.collection('rides')
-    all_rides = rides_ref.stream()
-
-    upcoming = []
+    all_docs = rides_ref.stream()
     today = date.today()
-    for doc in all_rides:
+    upcoming = []
+    for doc in all_docs:
         ride = doc.to_dict()
-        # Parse the date string back into a date object
         ride_date = datetime.strptime(ride['date'], "%Y-%m-%d").date()
         if ride_date >= today:
-            ride['id'] = doc.id
+            user_doc = db.collection('users').document(ride['driver_id']).get()
+            user = user_doc.to_dict() if user_doc.exists else {}
+            dob_str = user.get('dob', '')
+            try:
+                dob_obj = datetime.strptime(dob_str, "%Y-%m-%d").date()
+            except ValueError:
+                try:
+                    dob_obj = datetime.strptime(dob_str, "%m-%d-%Y").date()
+                except ValueError:
+                    dob_obj = today
+            age = today.year - dob_obj.year - ((today.month, today.day) < (dob_obj.month, dob_obj.day))
+            ride.update({
+                'id': doc.id,
+                'first_name': user.get('first_name',''),
+                'gender': user.get('gender',''),
+                'school': user.get('school',''),
+                'age': age,
+                'profile_picture': user.get('profile_picture','')
+            })
             upcoming.append(ride)
-
-    # Sort by ride date/time
     upcoming.sort(key=lambda r: (r['date'], r['time']))
-
     return render(request, 'core/rides.html', {'rides': upcoming})
+
+
+def edit_profile(request):
+    if not request.session.get('firebase_user'):
+        return redirect('login')
+    user_id = request.session.get('user_id')
+    user_ref = db.collection('users').document(user_id)
+    user_doc = user_ref.get()
+    if request.method == 'POST':
+        file = request.FILES.get('profile_picture')
+        if file:
+            ext = file.name.split('.')[-1]
+            blob = bucket.blob(f'profile_pictures/{user_id}.{ext}')
+            blob.upload_from_file(file, content_type=file.content_type)
+            blob.make_public()
+            url = blob.public_url
+            user_ref.update({'profile_picture': url})
+            messages.success(request, 'Profile picture updated.')
+        return redirect('home')
+    user = user_doc.to_dict() if user_doc.exists else {}
+    return render(request, 'core/profile.html', {'user': user, 'today': date.today()})
 
 
 
