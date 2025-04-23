@@ -149,11 +149,29 @@ def login_view(request):
 def home(request):
     if not request.session.get('firebase_user'):
         return redirect('login')
-    return render(request, 'core/home.html', {
+    # Handle profile picture upload
+    if request.method == 'POST' and request.FILES.get('profile_picture'):
+        file = request.FILES['profile_picture']
+        user_id = request.session.get('user_id')
+        ext = file.name.split('.')[-1]
+        blob = bucket.blob(f'profile_pictures/{user_id}.{ext}')
+        blob.upload_from_file(file, content_type=file.content_type)
+        blob.make_public()
+        url = blob.public_url
+        db.collection('users').document(user_id).update({'profile_picture': url})
+        messages.success(request, 'Profile picture updated.')
+        return redirect('home')
+    # Fetch current profile picture
+    user_ref = db.collection('users').document(request.session.get('user_id'))
+    user_doc = user_ref.get()
+    user_data = user_doc.to_dict() if user_doc.exists else {}
+    context = {
         'name': request.session.get('user_name'),
         'dob': request.session.get('dob'),
         'email': request.session.get('email'),
-    })
+        'profile_picture': user_data.get('profile_picture', '')
+    }
+    return render(request, 'core/home.html', context)
 
 
 def logout_view(request):
@@ -258,6 +276,7 @@ def edit_profile(request):
         return redirect('home')
     user = user_doc.to_dict() if user_doc.exists else {}
     return render(request, 'core/profile.html', {'user': user, 'today': date.today()})
+
 
 
 

@@ -1,22 +1,32 @@
 {% extends "core/base.html" %}
 {% load static %}
 
-
 {% block content %}
-<div class="d-flex justify-content-center align-items-center vh-100">
-  <div class="text-center p-4 shadow rounded" style="max-width: 600px; width:100%;">
-    <img src="{% static 'core/logo.png' %}" alt="Kumba Logo" class="mb-4" style="max-width: 120px;">
-    <h3 class="mb-3">Welcome, {{ name }}!</h3>
-    <p><strong>Email:</strong> {{ email }}</p>
-    <p><strong>Date of Birth:</strong> {{ dob }}</p>
+<div class="d-flex flex-column justify-content-center align-items-center vh-100">
+  <form method="post" enctype="multipart/form-data" class="text-center">
+    {% csrf_token %}
+    {% if profile_picture %}
+      <label for="profile_picture">
+        <img src="{{ profile_picture }}"
+             class="rounded-circle mb-3"
+             style="width:150px; height:150px; object-fit:cover; cursor:pointer;"
+             title="Click to change picture">
+      </label>
+    {% else %}
+      <label for="profile_picture">
+        <div class="bg-secondary rounded-circle mb-3"
+             style="width:150px; height:150px; cursor:pointer;"></div>
+      </label>
+    {% endif %}
+    <input id="profile_picture" name="profile_picture" type="file"
+           accept="image/*" hidden onchange="this.form.submit()">
+  </form>
 
-    <div class="my-3 d-flex justify-content-center gap-2">
-      <form method="post" action="{% url 'reset_password' %}">
-        {% csrf_token %}
-        <button class="btn btn-warning">Reset Password</button>
-      </form>
-      <p><a href="{% url 'logout' %}" class="btn btn-danger">Log Out</a></p>
-    </div>
+  <h3>Welcome, {{ name }}!</h3>
+  <p>Email: {{ email }}<br>Born: {{ dob }}</p>
+  <a href="{% url 'reset_password' %}" class="btn btn-link">Reset Password</a>
+  <a href="{% url 'logout' %}" class="btn btn-link">Log Out</a>
+</div>
 
     <hr class="my-4">
 
