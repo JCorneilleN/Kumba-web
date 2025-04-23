@@ -214,5 +214,28 @@ def post_ride(request):
         return redirect('home')
     return render(request, 'core/post_ride.html')
 
+def list_rides(request):
+    if not request.session.get('firebase_user'):
+        return redirect('login')
+
+    # Fetch rides where date is today or in the future
+    rides_ref = db.collection('rides')
+    all_rides = rides_ref.stream()
+
+    upcoming = []
+    today = date.today()
+    for doc in all_rides:
+        ride = doc.to_dict()
+        # Parse the date string back into a date object
+        ride_date = datetime.strptime(ride['date'], "%Y-%m-%d").date()
+        if ride_date >= today:
+            ride['id'] = doc.id
+            upcoming.append(ride)
+
+    # Sort by ride date/time
+    upcoming.sort(key=lambda r: (r['date'], r['time']))
+
+    return render(request, 'core/rides.html', {'rides': upcoming})
+
 
 

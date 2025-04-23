@@ -9,6 +9,12 @@
   <link href="{% static 'css/main.css' %}" rel="stylesheet">
 </head>
 <body>
+  <nav class="mb-4">
+    <a href="{% url 'home' %}" class="me-3">Home</a>
+    <a href="{% url 'post_ride' %}" class="me-3">Post a Ride</a>
+    <a href="{% url 'list_rides' %}">Browse Rides</a>
+  </nav>
+  
   <div class="container mt-5">
 
     {% if messages %}

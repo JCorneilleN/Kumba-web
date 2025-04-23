@@ -1,0 +1,29 @@
+{% load static %}
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="container my-4">
+  <h2 class="mb-4">Available Rides</h2>
+  {% if rides %}
+    <div class="row g-3">
+      {% for ride in rides %}
+        <div class="col-md-6">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">{{ ride.origin }} → {{ ride.destination }}</h5>
+              <p class="card-text">
+                📅 {{ ride.date }} &nbsp;⏰ {{ ride.time }}<br>
+                🚗 Seats: {{ ride.seats }}<br>
+                📝 {{ ride.notes|default:"No additional notes." }}
+              </p>
+              <a href="#" class="btn btn-primary">Join Ride</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No upcoming rides at the moment.</p>
+  {% endif %}
+</div>
+{% endblock %}
