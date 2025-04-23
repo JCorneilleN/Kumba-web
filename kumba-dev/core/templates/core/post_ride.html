@@ -1,18 +1,21 @@
 {% extends "core/base.html" %}
+{% load static %}
+
 {% block content %}
-<h2>Post a Ride</h2>
-<form method="post">
-    {% csrf_token %}
-    <div class="mb-3"><input class="form-control" name="from" placeholder="From" required></div>
-    <div class="mb-3"><input class="form-control" name="to" placeholder="To" required></div>
-    <div class="mb-3"><input class="form-control" name="date" type="date" required></div>
-    <div class="mb-3"><input class="form-control" name="time" type="time" required></div>
-    <div class="mb-3"><input class="form-control" name="social" placeholder="Instagram / WhatsApp" required></div>
-    <div class="mb-3"><textarea class="form-control" name="notes" placeholder="Extra info (optional)"></textarea></div>
-    <div class="form-check mb-3">
-        <input type="checkbox" class="form-check-input" name="is_driver" id="is_driver">
-        <label class="form-check-label" for="is_driver">I am a driver</label>
-    </div>
-    <button class="btn btn-primary">Post Ride</button>
-</form>
+<div class="d-flex justify-content-center align-items-center vh-100">
+  <div class="p-4 shadow rounded" style="max-width: 500px; width:100%;">
+    <h4 class="text-center mb-3">Post a New Ride</h4>
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-2"><input name="origin" class="form-control" placeholder="Origin" required></div>
+      <div class="mb-2"><input name="destination" class="form-control" placeholder="Destination" required></div>
+      <div class="mb-2"><input type="date" name="date" class="form-control" required></div>
+      <div class="mb-2"><input type="time" name="time" class="form-control" required></div>
+      <div class="mb-2"><input type="number" name="seats" class="form-control" min="1" placeholder="Seats available" required></div>
+      <div class="mb-3"><textarea name="notes" class="form-control" placeholder="Additional notes (optional)"></textarea></div>
+      <button class="btn btn-primary w-100">Post Ride</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
+
