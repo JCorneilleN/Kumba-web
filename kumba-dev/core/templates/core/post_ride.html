@@ -1,21 +1,78 @@
 {% extends "core/base.html" %}
 {% load static %}
 
+<script src="{% static 'core/js/autocomplete.js' %}"></script>
+
 {% block content %}
-<div class="d-flex justify-content-center align-items-center vh-100">
-  <div class="p-4 shadow rounded" style="max-width: 500px; width:100%;">
-    <h4 class="text-center mb-3">Post a New Ride</h4>
-    <form method="post">
-      {% csrf_token %}
-      <div class="mb-2"><input name="origin" class="form-control" placeholder="Origin" required></div>
-      <div class="mb-2"><input name="destination" class="form-control" placeholder="Destination" required></div>
-      <div class="mb-2"><input type="date" name="date" class="form-control" required></div>
-      <div class="mb-2"><input type="time" name="time" class="form-control" required></div>
-      <div class="mb-2"><input type="number" name="seats" class="form-control" min="1" placeholder="Seats available" required></div>
-      <div class="mb-3"><textarea name="notes" class="form-control" placeholder="Additional notes (optional)"></textarea></div>
-      <button class="btn btn-primary w-100">Post Ride</button>
-    </form>
-  </div>
+<div class="container my-4">
+  <h3 class="mb-4">Post a Ride</h3>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="origin" class="form-label">Origin</label>
+      <input 
+        type="text" 
+        id="origin" 
+        name="origin" 
+        class="form-control" 
+        placeholder="Start typing an address…" 
+        autocomplete="off" 
+        required>
+      <div id="origin-suggestions" class="list-group position-absolute w-100"></div>
+    </div>
+
+    <div class="mb-3">
+      <label for="destination" class="form-label">Destination</label>
+      <input 
+        type="text" 
+        id="destination" 
+        name="destination" 
+        class="form-control" 
+        placeholder="Start typing an address…" 
+        autocomplete="off" 
+        required>
+      <div id="destination-suggestions" class="list-group position-absolute w-100"></div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label for="date" class="form-label">Date</label>
+        <input type="date" id="date" name="date" class="form-control" required>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label for="time" class="form-label">Time</label>
+        <input type="time" id="time" name="time" class="form-control" required>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label for="seats" class="form-label">Seats</label>
+        <input type="number" id="seats" name="seats" class="form-control" min="1" required>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="car_type" class="form-label">Car Make/Model</label>
+      <input type="text" id="car_type" name="car_type" class="form-control" placeholder="e.g. Toyota Camry">
+    </div>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="car_year" class="form-label">Year</label>
+        <input type="text" id="car_year" name="car_year" class="form-control" placeholder="e.g. 2020">
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="car_color" class="form-label">Color</label>
+        <input type="text" id="car_color" name="car_color" class="form-control" placeholder="e.g. Silver">
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="notes" class="form-label">Additional Notes</label>
+      <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
+    </div>
+
+    <button class="btn btn-primary">Post Ride</button>
+  </form>
 </div>
+
+
 {% endblock %}
 

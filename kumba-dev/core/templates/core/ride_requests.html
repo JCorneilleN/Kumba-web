@@ -1,0 +1,38 @@
+
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container my-4">
+  <h3 class="mb-4">Join Requests</h3>
+
+  {% if requests %}
+    <ul class="list-group">
+      {% for req in requests %}
+        <li class="list-group-item d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center">
+            {% if req.profile %}
+              <img src="{{ req.profile }}"
+                   class="rounded-circle me-3"
+                   style="width:48px; height:48px; object-fit:cover;">
+            {% else %}
+              <div class="bg-secondary rounded-circle me-3" style="width:48px; height:48px;"></div>
+            {% endif %}
+            <span>{{ req.name }} requested on {{ req.requested_at|date:"M j, Y H:i" }}</span>
+          </div>
+          <div>
+            <a href="{% url 'handle_request' ride_id req.user_id 'accept' %}"
+               class="btn btn-sm btn-success me-2">Accept</a>
+            <a href="{% url 'handle_request' ride_id req.user_id 'reject' %}"
+               class="btn btn-sm btn-danger">Reject</a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No incoming requests right now.</p>
+  {% endif %}
+
+  <a href="{% url 'list_rides' %}" class="btn btn-link mt-3">← Back to Rides</a>
+</div>
+{% endblock %}

@@ -97,9 +97,7 @@ STATIC_URL = '/static/'
 # Where static files are collected to with collectstatic
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Additional locations for static files
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # project-level static directory
-]
+STATICFILES_DIRS = [BASE_DIR / 'core' / 'static']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
