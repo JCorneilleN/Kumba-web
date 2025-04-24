@@ -9,6 +9,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.conf import settings
 from firebase_admin import auth as firebase_auth, storage as firebase_storage
+from firebase_admin import firestore
 from .firebase import db, bucket
 
 FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
@@ -255,6 +256,34 @@ def list_rides(request):
             upcoming.append(ride)
     upcoming.sort(key=lambda r: (r['date'], r['time']))
     return render(request, 'core/rides.html', {'rides': upcoming})
+
+def join_ride(request, ride_id):
+    if not request.session.get('firebase_user'):
+        return redirect('login')
+
+    user_id = request.session['user_id']
+    ride_ref = db.collection('rides').document(ride_id)
+    ride = ride_ref.get().to_dict()
+
+    # Make sure seats remain
+    if ride.get('seats', 0) < 1:
+        messages.error(request, "Sorry, this ride is full.")
+        return redirect('list_rides')
+
+    # Add this rider to a subcollection (or array) of participants
+    ride_ref.collection('participants').document(user_id).set({
+        'joined_at': datetime.utcnow().isoformat(),
+        'user_id': user_id
+    })
+
+    # Decrement available seats
+    ride_ref.update({
+        'seats': firestore.Increment(-1)
+    })
+
+    messages.success(request, "You’ve joined the ride!")
+    return redirect('list_rides')
+
 
 
 def edit_profile(request):

@@ -10,6 +10,7 @@ urlpatterns = [
     path('reset-password/', views.reset_password, name='reset_password'),
     path('post-ride/', views.post_ride, name='post_ride'),
     path('rides/', views.list_rides, name='list_rides'),
+    path('rides/<str:ride_id>/join/', views.join_ride, name='join_ride'),
 
 ]
 

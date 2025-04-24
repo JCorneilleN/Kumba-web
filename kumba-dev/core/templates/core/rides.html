@@ -28,7 +28,9 @@
                 🚗 Seats: {{ ride.seats }}<br>
                 📝 {{ ride.notes|default:"No additional notes." }}
               </p>
-              <a href="#" class="btn btn-primary">Join Ride</a>
+              <a href="{% url 'join_ride' ride.id %}" class="btn btn-primary">
+                Join Ride
+              </a>              
             </div>
           </div>
         </div>
