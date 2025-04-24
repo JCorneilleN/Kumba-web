@@ -11,6 +11,9 @@ urlpatterns = [
     path('post-ride/', views.post_ride, name='post_ride'),
     path('rides/', views.list_rides, name='list_rides'),
     path('rides/<str:ride_id>/join/', views.join_ride, name='join_ride'),
+    path('rides/<str:ride_id>/request/', views.request_join, name='request_join'),
+    path('rides/<str:ride_id>/requests/', views.ride_requests, name='ride_requests'),
+    path('rides/<str:ride_id>/requests/<str:user_id>/<str:action>/', views.handle_request, name='handle_request'),
 
 ]
 

@@ -206,6 +206,9 @@ def post_ride(request):
         time_str = request.POST.get('time')
         seats = int(request.POST.get('seats'))
         notes = request.POST.get('notes', '')
+        car_type = request.POST.get('car_type', '')
+        car_year = request.POST.get('car_year', '')
+        car_color = request.POST.get('car_color', '')
         user_id = request.session.get('user_id')
         ride_data = {
             'origin': origin,
@@ -214,10 +217,14 @@ def post_ride(request):
             'time': time_str,
             'seats': seats,
             'notes': notes,
+            'car_type': car_type,
+            'car_year': car_year,
+            'car_color': car_color,
             'driver_id': user_id,
             'created_at': datetime.utcnow().isoformat()
         }
-        db.collection('rides').add(ride_data)
+        # Create ride document
+        ride_ref = db.collection('rides').add(ride_data)[1]
         messages.success(request, "Ride posted successfully!")
         return redirect('list_rides')
     return render(request, 'core/post_ride.html')
@@ -283,6 +290,58 @@ def join_ride(request, ride_id):
 
     messages.success(request, "You’ve joined the ride!")
     return redirect('list_rides')
+
+def request_join(request, ride_id):
+    if not request.session.get('firebase_user'):
+        return redirect('login')
+    user_id = request.session['user_id']
+    ride_ref = db.collection('rides').document(ride_id)
+    # Add to requests subcollection
+    ride_ref.collection('requests').document(user_id).set({
+        'user_id': user_id,
+        'status': 'pending',
+        'requested_at': datetime.utcnow().isoformat()
+    })
+    messages.success(request, "Join request sent to driver.")
+    return redirect('list_rides')
+
+# DRIVER VIEW: see incoming requests
+
+def ride_requests(request, ride_id):
+    if not request.session.get('firebase_user'):
+        return redirect('login')
+    ride = db.collection('rides').document(ride_id).get().to_dict()
+    if ride.get('driver_id') != request.session['user_id']:
+        return redirect('list_rides')
+    reqs = db.collection('rides').document(ride_id).collection('requests').stream()
+    requests_list = []
+    for doc in reqs:
+        r = doc.to_dict()
+        # fetch user profile
+        user_doc = db.collection('users').document(r['user_id']).get()
+        user = user_doc.to_dict() if user_doc.exists else {}
+        r.update({'name': user.get('first_name'), 'profile': user.get('profile_picture')})
+        requests_list.append(r)
+    return render(request, 'core/ride_requests.html', {'requests': requests_list, 'ride_id': ride_id})
+
+# ACCEPT or REJECT join
+
+def handle_request(request, ride_id, user_id, action):
+    if not request.session.get('firebase_user'):
+        return redirect('login')
+    ride_ref = db.collection('rides').document(ride_id)
+    req_ref = ride_ref.collection('requests').document(user_id)
+    if action == 'accept':
+        # move to participants and decrement seats
+        ride_ref.collection('participants').document(user_id).set({'joined_at': datetime.utcnow().isoformat()})
+        ride_ref.update({'seats': firestore.Increment(-1)})
+        req_ref.update({'status': 'accepted'})
+        messages.success(request, "Join request accepted.")
+    else:
+        req_ref.update({'status': 'rejected'})
+        messages.error(request, "Join request rejected.")
+    return redirect('ride_requests', ride_id=ride_id)
+
 
 
 
