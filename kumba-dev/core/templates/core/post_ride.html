@@ -1,14 +1,13 @@
 {% extends "core/base.html" %}
 {% load static %}
 
-<script src="{% static 'core/js/autocomplete.js' %}"></script>
-
 {% block content %}
 <div class="container my-4">
   <h3 class="mb-4">Post a Ride</h3>
   <form method="post">
     {% csrf_token %}
-    <div class="mb-3">
+
+    <div class="mb-3 position-relative">
       <label for="origin" class="form-label">Origin</label>
       <input 
         type="text" 
@@ -18,10 +17,12 @@
         placeholder="Start typing an address…" 
         autocomplete="off" 
         required>
-      <div id="origin-suggestions" class="list-group position-absolute w-100"></div>
+      <div id="origin-suggestions" 
+           class="list-group position-absolute w-100" 
+           style="z-index:1000;"></div>
     </div>
 
-    <div class="mb-3">
+    <div class="mb-3 position-relative">
       <label for="destination" class="form-label">Destination</label>
       <input 
         type="text" 
@@ -31,7 +32,9 @@
         placeholder="Start typing an address…" 
         autocomplete="off" 
         required>
-      <div id="destination-suggestions" class="list-group position-absolute w-100"></div>
+      <div id="destination-suggestions" 
+           class="list-group position-absolute w-100" 
+           style="z-index:1000;"></div>
     </div>
 
     <div class="row">
@@ -53,6 +56,7 @@
       <label for="car_type" class="form-label">Car Make/Model</label>
       <input type="text" id="car_type" name="car_type" class="form-control" placeholder="e.g. Toyota Camry">
     </div>
+
     <div class="row">
       <div class="col-md-6 mb-3">
         <label for="car_year" class="form-label">Year</label>
@@ -69,10 +73,13 @@
       <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
     </div>
 
-    <button class="btn btn-primary">Post Ride</button>
+    <button type="submit" class="btn btn-primary">Post Ride</button>
   </form>
 </div>
-
-
 {% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'core/js/autocomplete.js' %}"></script>
+{% endblock %}
+
 
