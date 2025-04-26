@@ -32,5 +32,7 @@
   </div>
 
   <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+  {# HERE: allow pages to inject extra scripts #}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
