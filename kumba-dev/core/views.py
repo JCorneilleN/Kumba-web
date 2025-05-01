@@ -232,58 +232,91 @@ def post_ride(request):
     return render(request, 'core/post_ride.html')
 
 
-# core/views.py
 
-from datetime import datetime, date
-from django.shortcuts import render, redirect
-from .firebase import db
 
 def list_rides(request):
-    # ensure user is logged in
+    # 1) Must be logged in
     if not request.session.get("firebase_user"):
         return redirect("login")
 
+    # 2) Load current user info
+    user_id = request.session.get("user_id")
+    current_user = {}
+    if user_id:
+        udoc = db.collection("users").document(user_id).get()
+        if udoc.exists:
+            u = udoc.to_dict()
+            # Compute age
+            dob_str = u.get("dob")
+            age = None
+            if dob_str:
+                dob = datetime.strptime(dob_str, "%Y-%m-%d").date()
+                today = date.today()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            current_user = {
+                "user_name":   f"{u.get('first_name')} {u.get('last_name')}",
+                "user_age":    age,
+                "user_gender": u.get("gender"),
+                "user_school": u.get("school"),
+                "user_picture_url": u.get("profile_picture_url")  # adjust key if needed
+            }
+
+    # 3) Gather upcoming rides
     today = date.today()
     upcoming = []
-
-    # pull all ride documents
-    docs = db.collection("rides").stream()
-    for doc in docs:
+    for doc in db.collection("rides").stream():
         r = doc.to_dict()
 
-        # Try to get the date string; adjust if you used a different key in your post_ride
-        ride_date_str = r.get("date") or r.get("ride_date") or r.get("rideDate")
+        # parse and skip past dates
+        ride_date_str = r.get("date")
         if not ride_date_str:
-            # no date field at all — skip
             continue
-
-        # parse YYYY-MM-DD, skip if bad format
         try:
             ride_date = datetime.strptime(ride_date_str, "%Y-%m-%d").date()
         except ValueError:
-            # you stored it in another format? skip or handle here
             continue
-
-        # only future or today
         if ride_date < today:
             continue
 
-        # build the context for the template
+        # lookup driver info
+        driver_id = r.get("driver_id")
+        driver_data = {}
+        if driver_id:
+            ddoc = db.collection("users").document(driver_id).get()
+            if ddoc.exists:
+                d = ddoc.to_dict()
+                dob_d = d.get("dob")
+                driver_age = None
+                if dob_d:
+                    dd = datetime.strptime(dob_d, "%Y-%m-%d").date()
+                    driver_age = today.year - dd.year - ((today.month, today.day) < (dd.month, dd.day))
+                driver_data = {
+                    "driver_name":   f"{d.get('first_name')} {d.get('last_name')}",
+                    "driver_age":    driver_age,
+                    "driver_gender": d.get("gender"),
+                    "driver_school": d.get("school"),
+                    "driver_picture": d.get("profile_picture_url")  # adjust key if needed
+                }
+
+        # assemble ride record for template
         upcoming.append({
             "id": doc.id,
-            "origin_name":    r.get("origin_name"),
-            "origin_address": r.get("origin_address"),
-            "destination_name":    r.get("destination_name"),
-            "destination_address": r.get("destination_address"),
-            "date": ride_date_str,
-            "time": r.get("time"),
-            "seats": r.get("seats"),
-            "price_per_person": r.get("price_per_person"),
-            "driver_name": r.get("driver_name"),
-            # …any other fields you need…
+            "origin_name":        r.get("origin_name"),
+            "origin_address":     r.get("origin_address"),
+            "destination_name":   r.get("destination_name"),
+            "destination_address":r.get("destination_address"),
+            "date":               ride_date_str,
+            "time":               r.get("time"),
+            "seats":              r.get("seats"),
+            "price_per_person":   r.get("price_per_person"),
+            **driver_data
         })
 
-    return render(request, "core/rides.html", {"rides": upcoming})
+    # 4) Render with both user + rides context
+    return render(request, "core/rides.html", {
+        **current_user,
+        "rides": upcoming
+    })
 
 
 def join_ride(request, ride_id):
