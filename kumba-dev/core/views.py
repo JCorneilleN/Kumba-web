@@ -232,39 +232,59 @@ def post_ride(request):
     return render(request, 'core/post_ride.html')
 
 
+# core/views.py
+
+from datetime import datetime, date
+from django.shortcuts import render, redirect
+from .firebase import db
+
 def list_rides(request):
-    if not request.session.get('firebase_user'):
-        return redirect('login')
-    rides_ref = db.collection('rides')
-    all_docs = rides_ref.stream()
+    # ensure user is logged in
+    if not request.session.get("firebase_user"):
+        return redirect("login")
+
     today = date.today()
     upcoming = []
-    for doc in all_docs:
-        ride = doc.to_dict()
-        ride_date = datetime.strptime(ride['date'], "%Y-%m-%d").date()
-        if ride_date >= today:
-            user_doc = db.collection('users').document(ride['driver_id']).get()
-            user = user_doc.to_dict() if user_doc.exists else {}
-            dob_str = user.get('dob', '')
-            try:
-                dob_obj = datetime.strptime(dob_str, "%Y-%m-%d").date()
-            except ValueError:
-                try:
-                    dob_obj = datetime.strptime(dob_str, "%m-%d-%Y").date()
-                except ValueError:
-                    dob_obj = today
-            age = today.year - dob_obj.year - ((today.month, today.day) < (dob_obj.month, dob_obj.day))
-            ride.update({
-                'id': doc.id,
-                'first_name': user.get('first_name',''),
-                'gender': user.get('gender',''),
-                'school': user.get('school',''),
-                'age': age,
-                'profile_picture': user.get('profile_picture','')
-            })
-            upcoming.append(ride)
-    upcoming.sort(key=lambda r: (r['date'], r['time']))
-    return render(request, 'core/rides.html', {'rides': upcoming})
+
+    # pull all ride documents
+    docs = db.collection("rides").stream()
+    for doc in docs:
+        r = doc.to_dict()
+
+        # Try to get the date string; adjust if you used a different key in your post_ride
+        ride_date_str = r.get("date") or r.get("ride_date") or r.get("rideDate")
+        if not ride_date_str:
+            # no date field at all — skip
+            continue
+
+        # parse YYYY-MM-DD, skip if bad format
+        try:
+            ride_date = datetime.strptime(ride_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            # you stored it in another format? skip or handle here
+            continue
+
+        # only future or today
+        if ride_date < today:
+            continue
+
+        # build the context for the template
+        upcoming.append({
+            "id": doc.id,
+            "origin_name":    r.get("origin_name"),
+            "origin_address": r.get("origin_address"),
+            "destination_name":    r.get("destination_name"),
+            "destination_address": r.get("destination_address"),
+            "date": ride_date_str,
+            "time": r.get("time"),
+            "seats": r.get("seats"),
+            "price_per_person": r.get("price_per_person"),
+            "driver_name": r.get("driver_name"),
+            # …any other fields you need…
+        })
+
+    return render(request, "core/rides.html", {"rides": upcoming})
+
 
 def join_ride(request, ride_id):
     if not request.session.get('firebase_user'):
