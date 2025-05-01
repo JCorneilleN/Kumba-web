@@ -205,6 +205,7 @@ def post_ride(request):
         date_str = request.POST.get('date')
         time_str = request.POST.get('time')
         seats = int(request.POST.get('seats'))
+        price = float(request.POST.get('price', 0))
         notes = request.POST.get('notes', '')
         car_type = request.POST.get('car_type', '')
         car_year = request.POST.get('car_year', '')
@@ -220,6 +221,7 @@ def post_ride(request):
             'car_type': car_type,
             'car_year': car_year,
             'car_color': car_color,
+            'price_per_person': price,
             'driver_id': user_id,
             'created_at': datetime.utcnow().isoformat()
         }
