@@ -234,89 +234,97 @@ def post_ride(request):
 
 
 
+
+
+def _parse_date_string(s: str):
+    """
+    Try multiple common date formats, return a date or None.
+    """
+    for fmt in ("%Y-%m-%d", "%m-%d-%Y", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except Exception:
+            continue
+    return None
+
 def list_rides(request):
-    # 1) Must be logged in
+    # --- 1) Ensure logged in ---
     if not request.session.get("firebase_user"):
         return redirect("login")
 
-    # 2) Load current user info
-    user_id = request.session.get("user_id")
+    today = date.today()
+
+    # --- 2) Load current user info ---
     current_user = {}
+    user_id = request.session.get("user_id")
     if user_id:
         udoc = db.collection("users").document(user_id).get()
         if udoc.exists:
             u = udoc.to_dict()
-            # Compute age
-            dob_str = u.get("dob")
+            dob_str = u.get("dob", "")
+            dob = _parse_date_string(dob_str)
             age = None
-            if dob_str:
-                dob = datetime.strptime(dob_str, "%Y-%m-%d").date()
-                today = date.today()
+            if dob:
                 age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
             current_user = {
-                "user_name":   f"{u.get('first_name')} {u.get('last_name')}",
-                "user_age":    age,
-                "user_gender": u.get("gender"),
-                "user_school": u.get("school"),
-                "user_picture_url": u.get("profile_picture_url")  # adjust key if needed
+                "user_name":         f"{u.get('first_name')} {u.get('last_name')}",
+                "user_age":          age,
+                "user_gender":       u.get("gender"),
+                "user_school":       u.get("school"),
+                "user_picture_url":  u.get("profile_picture_url")
             }
 
-    # 3) Gather upcoming rides
-    today = date.today()
+    # --- 3) Gather upcoming rides ---
     upcoming = []
     for doc in db.collection("rides").stream():
         r = doc.to_dict()
 
-        # parse and skip past dates
-        ride_date_str = r.get("date")
-        if not ride_date_str:
-            continue
-        try:
-            ride_date = datetime.strptime(ride_date_str, "%Y-%m-%d").date()
-        except ValueError:
-            continue
-        if ride_date < today:
+        # parse ride date
+        ride_date_str = r.get("date", "")
+        ride_date = _parse_date_string(ride_date_str)
+        if not ride_date or ride_date < today:
             continue
 
         # lookup driver info
-        driver_id = r.get("driver_id")
         driver_data = {}
+        driver_id = r.get("driver_id")
         if driver_id:
             ddoc = db.collection("users").document(driver_id).get()
             if ddoc.exists:
                 d = ddoc.to_dict()
-                dob_d = d.get("dob")
+                dob_d_str = d.get("dob", "")
+                dob_d = _parse_date_string(dob_d_str)
                 driver_age = None
                 if dob_d:
-                    dd = datetime.strptime(dob_d, "%Y-%m-%d").date()
-                    driver_age = today.year - dd.year - ((today.month, today.day) < (dd.month, dd.day))
+                    driver_age = today.year - dob_d.year - ((today.month, today.day) < (dob_d.month, dob_d.day))
                 driver_data = {
-                    "driver_name":   f"{d.get('first_name')} {d.get('last_name')}",
-                    "driver_age":    driver_age,
-                    "driver_gender": d.get("gender"),
-                    "driver_school": d.get("school"),
-                    "driver_picture": d.get("profile_picture_url")  # adjust key if needed
+                    "driver_name":    f"{d.get('first_name')} {d.get('last_name')}",
+                    "driver_age":     driver_age,
+                    "driver_gender":  d.get("gender"),
+                    "driver_school":  d.get("school"),
+                    "driver_picture": d.get("profile_picture_url")
                 }
 
-        # assemble ride record for template
         upcoming.append({
-            "id": doc.id,
-            "origin_name":        r.get("origin_name"),
-            "origin_address":     r.get("origin_address"),
-            "destination_name":   r.get("destination_name"),
-            "destination_address":r.get("destination_address"),
-            "date":               ride_date_str,
-            "time":               r.get("time"),
-            "seats":              r.get("seats"),
-            "price_per_person":   r.get("price_per_person"),
+            "id":                   doc.id,
+            "origin_name":          r.get("origin_name"),
+            "origin_address":       r.get("origin_address"),
+            "destination_name":     r.get("destination_name"),
+            "destination_address":  r.get("destination_address"),
+            "date":                 ride_date.strftime("%Y-%m-%d"),
+            "time":                 r.get("time"),
+            "seats":                r.get("seats"),
+            "price_per_person":     r.get("price_per_person"),
             **driver_data
         })
 
-    # 4) Render with both user + rides context
-    return render(request, "core/rides.html", {
+    # --- 4) Render template with user + rides ---
+    context = {
         **current_user,
         "rides": upcoming
-    })
+    }
+    return render(request, "core/rides.html", context)
+
 
 
 def join_ride(request, ride_id):

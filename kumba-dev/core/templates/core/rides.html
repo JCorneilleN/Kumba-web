@@ -6,7 +6,7 @@
 
   {# ——— Current User Info ——— #}
   <div class="d-flex align-items-center mb-4">
-    <img src="{{ user_picture_url }}" 
+    <img src="{{ user.profile_picture }}" 
          alt="Profile picture" 
          class="rounded-circle me-3" 
          style="width:64px;height:64px;object-fit:cover;">
@@ -28,7 +28,7 @@
 
             {# ——— Driver Info ——— #}
             <div class="d-flex align-items-center mb-3">
-              <img src="{{ ride.driver_picture }}" 
+              <img src="{{ user.profile_picture }}" 
                    alt="Driver pic" 
                    class="rounded-circle me-2" 
                    style="width:40px;height:40px;object-fit:cover;">
