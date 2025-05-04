@@ -244,87 +244,72 @@ def _parse_date_string(s: str):
     return None
 
 def list_rides(request):
-    # 1) Auth guard
+    # 1) Require login
     if not request.session.get("firebase_user"):
         return redirect("login")
 
     today = date.today()
-
-    # 2) Load current user record
     user_id = request.session.get("user_id")
-    current_user = {
-        "user_first_name": None,
-        "user_age": None,
-        "user_gender": None,
-        "user_school": None,
-        "user_picture_url": None
-    }
-    if user_id:
-        udoc = db.collection("users").document(user_id).get()
-        if udoc.exists:
-            u = udoc.to_dict()
-            # first name
-            current_user["user_first_name"] = u.get("first_name")
-            # age
-            dob = _parse_date_string(u.get("dob", ""))
-            if dob:
-                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-                current_user["user_age"] = age
-            current_user["user_gender"] = u.get("gender")
-            current_user["user_school"] = u.get("school")
-            current_user["user_picture_url"] = u.get("profile_picture_url")
 
-    # 3) Collect upcoming rides
     upcoming = []
-    for doc in db.collection("rides").stream():
+    rides_ref = db.collection("rides")
+
+    for doc in rides_ref.stream():
         r = doc.to_dict()
 
-        # parse ride date & skip past
+        # parse ride date
         ride_date = _parse_date_string(r.get("date", ""))
-        if not ride_date or ride_date < today:
+        if not ride_date:
             continue
 
-        # driver lookup
-        driver_info = {
-            "driver_name": "Unknown",
-            "driver_age": None,
-            "driver_gender": "",
-            "driver_school": "",
-            "driver_picture": None
-        }
-        did = r.get("driver_id")
-        if did:
-            ddoc = db.collection("users").document(did).get()
-            if ddoc.exists:
-                d = ddoc.to_dict()
-                driver_info["driver_name"]   = d.get("first_name", "") + " " + d.get("last_name", "")
-                dob_d = _parse_date_string(d.get("dob", ""))
-                if dob_d:
-                    driver_info["driver_age"] = today.year - dob_d.year - ((today.month, today.day) < (dob_d.month, dob_d.day))
-                driver_info["driver_gender"]  = d.get("gender")
-                driver_info["driver_school"]  = d.get("school")
-                driver_info["driver_picture"] = d.get("profile_picture_url")
+        # delete past rides
+        if ride_date < today:
+            doc.reference.delete()
+            continue
 
-        # assemble
+        # fetch driver
+        driver = db.collection("users").document(r.get("driver_id")).get().to_dict() or {}
+        dob_d = _parse_date_string(driver.get("dob", ""))
+        age = None
+        if dob_d:
+            age = today.year - dob_d.year - ((today.month, today.day) < (dob_d.month, dob_d.day))
+
         upcoming.append({
             "id":                   doc.id,
-            "origin_name":          r.get("origin_name"),
-            "origin_address":       r.get("origin_address"),
-            "destination_name":     r.get("destination_name"),
-            "destination_address":  r.get("destination_address"),
-            "date":                 ride_date.strftime("%Y-%m-%d"),
-            "time":                 r.get("time"),
-            "seats":                r.get("seats"),
-            "price_per_person":     r.get("price_per_person"),
-            **driver_info
+            "driver_id":            r.get("driver_id"),
+            "driver_first_name":    driver.get("first_name", ""),
+            "driver_age":           age,
+            "driver_gender":        driver.get("gender", ""),
+            "driver_school":        driver.get("school", ""),
+            "driver_picture":       driver.get("profile_picture", ""),
+            "origin":               r.get("origin", ""),
+            "destination":          r.get("destination", ""),
+            "date":                 r.get("date", ""),
+            "time":                 r.get("time", ""),
+            "seats":                r.get("seats", 0),
+            "price_per_person":     r.get("price_per_person", 0),
         })
 
-    # 4) Render
     return render(request, "core/rides.html", {
-        **current_user,
-        "rides": upcoming
+        "rides": upcoming,
+        "current_user_id": user_id,
     })
 
+def delete_ride(request, ride_id):
+    if not request.session.get("firebase_user"):
+        return redirect("login")
+
+    ride_ref = db.collection("rides").document(ride_id)
+    ride = ride_ref.get().to_dict() or {}
+
+    # only the poster can delete
+    if ride.get("driver_id") != request.session.get("user_id"):
+        messages.error(request, "You can only delete your own rides.")
+    else:
+        ride_ref.delete()
+        messages.success(request, "Ride deleted.")
+
+    return redirect("list_rides")
 
 
 def join_ride(request, ride_id):
