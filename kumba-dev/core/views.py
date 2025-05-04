@@ -287,6 +287,10 @@ def list_rides(request):
             "date":                 r.get("date", ""),
             "time":                 r.get("time", ""),
             "seats":                r.get("seats", 0),
+            'car_type':             r.get("car_type",""),
+            'car_year':             r.get("car_year",""),
+            'car_color':            r.get("car_color",""),
+            'notes':                r.get("notes",""),
             "price_per_person":     r.get("price_per_person", 0),
         })
 

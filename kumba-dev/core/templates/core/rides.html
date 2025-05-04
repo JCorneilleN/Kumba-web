@@ -4,51 +4,56 @@
 {% block content %}
 <div class="container my-4">
   <h3 class="mb-4">Available Rides</h3>
+  <div class="row gy-3">
+    {% for ride in rides %}
+      <div class="col-12">
+        <div class="card border-success">
+          <div class="card-body d-flex align-items-start">
+            <!-- Left section -->
+            <div class="text-center me-4" style="width: 120px;">
+              <img src="{{ ride.driver_picture|default:'/static/core/images/default-profile.png' }}" 
+                   class="rounded-circle mb-2" 
+                   alt="{{ ride.driver_name }}" 
+                   style="width: 100px; height: 100px; object-fit: cover;">
+              <div class="fw-bold">{{ ride.driver_first_name|slice:":ride.driver_first_name|length" }}</div>
+              <br>
+              <div>🚻 {{ ride.driver_gender }}, {{ ride.driver_age }}</div>
+              <div class="fst-italic">🎓{{ ride.driver_school }}</div>
+            </div>
+            <!-- Center section -->
+            <div class="flex-fill">
+              <h5 class="card-title mb-1">
+                <span class="fw-bold">📍{{ ride.origin }}</span> <br>📍 <span class="fw-bold">{{ ride.destination }}</span>
+              </h5>
+              <br>
+          
+              <p class="mb-1">🚗 {{ ride.car_year }} {{ ride.car_color }} <span class="text-capitalize">{{ ride.car_type }} </span></p>
+              <p class="mb-1">💺 Seats: {{ ride.seats }}</p>
+              <p class="mb-1">🗓️ Date: {{ ride.date }}</p>
+              <p class="mb-1">⌚ Time: {{ ride.time }}</p>
+              <p class="mb-1"> {{ ride.notes }}</p>
 
-  {% for ride in rides %}
-    <div class="card mb-3 bg-success text-white">
-      <div class="card-body">
-
-        <!-- Driver info -->
-        <div class="d-flex align-items-center mb-3">
-          <img
-            src="{% if ride.driver_picture %}{{ ride.driver_picture }}{% else %}{% static 'core/images/default-profile.png' %}{% endif %}"
-            class="rounded-circle me-2"
-            style="width:40px; height:40px; object-fit:cover;"
-            alt="{{ ride.driver_first_name }}"
-          >
-          <h5 class="card-title mb-0">{{ ride.driver_first_name }}</h5>
+              
+            </div>
+            <!-- Right section -->
+            <div class="text-end" style="width: 150px;">
+              <h4 class="text-success">💲{{ ride.price_per_person }}</h4>
+              {% if ride.driver_id != request.session.user_id %}
+                <a href="{% url 'request_join' ride.id %}" class="btn btn-sm btn-success mt-2">🤝 Request</a>
+              {% else %}
+                <form method="post" action="{% url 'delete_ride' ride.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-danger mt-2">🗑 Delete</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
         </div>
-
-        <!-- Route -->
-        <p class="card-text">
-          📍 <strong>{{ ride.origin }}</strong><br>
-          📍 <strong>{{ ride.destination }}</strong>
-        </p>
-
-        <!-- Details -->
-        <p class="card-text">
-          🗓 {{ ride.date }} at {{ ride.time }}<br>
-          🚗 {{ ride.driver_gender }} · {{ ride.driver_age }} y/o · {{ ride.driver_school }}<br>
-          💺 Seats: {{ ride.seats }}<br>
-          💲 ${{ ride.price_per_person }} / person
-        </p>
-
-        <a href="{% url 'request_join' ride.id %}" class="btn btn-light btn-sm me-2">
-          🤝 Request to Join
-        </a>
-
-        {% if ride.driver_id == current_user_id %}
-          <a href="{% url 'delete_ride' ride.id %}" class="btn btn-danger btn-sm">
-            🗑 Delete
-          </a>
-        {% endif %}
-
       </div>
-    </div>
-  {% empty %}
-    <p class="text-muted">No rides available right now.</p>
-  {% endfor %}
+    {% empty %}
+      <p>No rides available.</p>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}
 
