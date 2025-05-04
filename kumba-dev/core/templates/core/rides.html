@@ -4,16 +4,20 @@
 {% block content %}
 <div class="container my-4">
 
-  {# ——— Current User Info ——— #}
+  {# —— Current User —— #}
   <div class="d-flex align-items-center mb-4">
-    <img src="{{ user.profile_picture }}" 
-         alt="Profile picture" 
-         class="rounded-circle me-3" 
-         style="width:64px;height:64px;object-fit:cover;">
+    <img 
+      src="{{ user_picture_url|default:static('core/images/default-profile.png') }}"
+      alt="{{ user_first_name }}’s picture"
+      class="rounded-circle me-3"
+      style="width:64px; height:64px; object-fit:cover;"
+    >
     <div>
-      <h5 class="mb-1">{{ user_name }}</h5>
+      <h5 class="mb-1">👤 {{ user_first_name }}</h5>
       <p class="mb-0" style="font-size:0.9rem;">
-        {{ user_age }} years old &middot; {{ user_gender }} &middot; {{ user_school }}
+        🎂 {{ user_age }} y.o &middot;
+        🚻 {{ user_gender }} &middot;
+        🎓 {{ user_school }}
       </p>
     </div>
   </div>
@@ -26,45 +30,50 @@
         <div class="card bg-success text-white h-100">
           <div class="card-body">
 
-            {# ——— Driver Info ——— #}
+            {# —— Driver Info —— #}
             <div class="d-flex align-items-center mb-3">
-              <img src="{{ user.profile_picture }}" 
-                   alt="Driver pic" 
-                   class="rounded-circle me-2" 
-                   style="width:40px;height:40px;object-fit:cover;">
+              <img
+                src="{{ ride.driver_picture|default:static('core/images/default-profile.png') }}"
+                alt="{{ ride.driver_name }}’s picture"
+                class="rounded-circle me-2"
+                style="width:40px; height:40px; object-fit:cover;"
+              >
               <div>
-                <strong>{{ ride.driver_name }}</strong><br>
+                <strong>🚗 {{ ride.driver_name|slice:":{{ ride.driver_name.find(' ') }}" }}</strong>
+                <br>
                 <small style="font-size:0.8rem;">
-                  {{ ride.driver_age }} y/o &middot; {{ ride.driver_gender }} &middot; {{ ride.driver_school }}
+                  🎂 {{ ride.driver_age }} y.o &middot;
+                  🚻 {{ ride.driver_gender }} &middot;
+                  🎓 {{ ride.driver_school }}
                 </small>
               </div>
             </div>
 
-            {# ——— Route ——— #}
+            {# —— Route —— #}
             <h5 class="card-title">{{ ride.origin_name }}</h5>
-            <p class="card-subtitle mb-2" style="font-size:0.85rem;">
+            <p class="card-subtitle mb-1" style="font-size:0.85rem;">
               {{ ride.origin_address }}
             </p>
 
             <div class="text-center my-2">
-              <i class="bi bi-arrow-down-circle-fill fs-3"></i>
+              <i class="bi bi-arrow-right-circle-fill fs-3"></i>
             </div>
 
-            <h5 class="card-title mt-2">{{ ride.destination_name }}</h5>
+            <h5 class="card-title">{{ ride.destination_name }}</h5>
             <p class="card-subtitle mb-3" style="font-size:0.85rem;">
               {{ ride.destination_address }}
             </p>
 
-            {# ——— Details ——— #}
+            {# —— Details —— #}
             <p class="card-text mb-1">
-              <strong>When:</strong> {{ ride.date }} at {{ ride.time }}<br>
-              <strong>Seats:</strong> {{ ride.seats }}<br>
-              <strong>Price:</strong> ${{ ride.price_per_person }} / person
+              <strong>📅</strong> {{ ride.date }} at {{ ride.time }}<br>
+              <strong>💺</strong> {{ ride.seats }}<br>
+              <strong>💲</strong> ${{ ride.price_per_person }} / person
             </p>
 
-            <a href="{% url 'request_join' ride.id %}" 
+            <a href="{% url 'request_join' ride.id %}"
                class="btn btn-light btn-sm mt-2">
-              Request to Join
+              🤝 Request to Join
             </a>
           </div>
         </div>
