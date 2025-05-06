@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <input name="origin"       value="{{ ride.origin }}"       class="form-control" required>
+  <input name="destination"  value="{{ ride.destination }}"  class="form-control" required>
+  <input type="date" name="date"  value="{{ ride.date }}"   class="form-control" required>
+  <input type="time" name="time"  value="{{ ride.time }}"   class="form-control" required>
+  <!-- etc. for seats, price, car_type, car_year, car_color, notes -->
+  <button class="btn btn-primary">Save Changes</button>
+</form>
+{% endblock %}

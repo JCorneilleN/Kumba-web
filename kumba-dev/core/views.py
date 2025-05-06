@@ -299,6 +299,49 @@ def list_rides(request):
         "current_user_id": user_id,
     })
 
+#Edit ride
+def edit_ride(request, ride_id):
+    # 1) auth guard
+    if not request.session.get("firebase_user"):
+        return redirect("login")
+
+    ride_ref = db.collection("rides").document(ride_id)
+    ride_doc = ride_ref.get()
+    if not ride_doc.exists:
+        messages.error(request, "Ride not found.")
+        return redirect("list_rides")
+
+    ride = ride_doc.to_dict()
+    # 2) only driver may edit
+    if ride.get("driver_id") != request.session.get("user_id"):
+        messages.error(request, "You’re not allowed to edit that ride.")
+        return redirect("list_rides")
+
+    if request.method == "POST":
+        # pull updated fields from the form
+        updates = {
+            "origin":          request.POST["origin"],
+            "destination":     request.POST["destination"],
+            "date":            request.POST["date"],
+            "time":            request.POST["time"],
+            "seats":           int(request.POST["seats"]),
+            "price_per_person": float(request.POST["price"]),
+            "car_type":        request.POST.get("car_type", ""),
+            "car_year":        request.POST.get("car_year", ""),
+            "car_color":       request.POST.get("car_color", ""),
+            "notes":           request.POST.get("notes", "")
+        }
+        # write back to Firestore
+        ride_ref.update(updates)
+        messages.success(request, "Ride updated successfully.")
+        return redirect("list_rides")
+
+    # GET → render a template pre-populated with ride data
+    return render(request, "core/edit_ride.html", {
+        "ride": ride,
+        "ride_id": ride_id
+    })
+
 def delete_ride(request, ride_id):
     if not request.session.get("firebase_user"):
         return redirect("login")
