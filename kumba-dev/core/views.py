@@ -301,7 +301,7 @@ def list_rides(request):
 
 #Edit ride
 def edit_ride(request, ride_id):
-    # 1) auth guard
+    # 1) Auth guard
     if not request.session.get("firebase_user"):
         return redirect("login")
 
@@ -312,31 +312,48 @@ def edit_ride(request, ride_id):
         return redirect("list_rides")
 
     ride = ride_doc.to_dict()
-    # 2) only driver may edit
+    # 2) Only the driver may edit
     if ride.get("driver_id") != request.session.get("user_id"):
         messages.error(request, "You’re not allowed to edit that ride.")
         return redirect("list_rides")
 
     if request.method == "POST":
-        # pull updated fields from the form
+        # Safely pull updated fields
+        origin   = request.POST.get("origin", ride.get("origin"))
+        dest     = request.POST.get("destination", ride.get("destination"))
+        date_str = request.POST.get("date", ride.get("date"))
+        time_str = request.POST.get("time", ride.get("time"))
+        seats    = request.POST.get("seats", ride.get("seats", 1))
+        price    = request.POST.get("price", request.POST.get("price_per_person", ride.get("price_per_person", 0)))
+        car_type = request.POST.get("car_type", ride.get("car_type", ""))
+        car_year = request.POST.get("car_year", ride.get("car_year", ""))
+        car_color= request.POST.get("car_color", ride.get("car_color", ""))
+        notes    = request.POST.get("notes", ride.get("notes", ""))
+
+        # Build the Firestore update dict
         updates = {
-            "origin":          request.POST["origin"],
-            "destination":     request.POST["destination"],
-            "date":            request.POST["date"],
-            "time":            request.POST["time"],
-            "seats":           int(request.POST["seats"]),
-            "price_per_person": float(request.POST["price"]),
-            "car_type":        request.POST.get("car_type", ""),
-            "car_year":        request.POST.get("car_year", ""),
-            "car_color":       request.POST.get("car_color", ""),
-            "notes":           request.POST.get("notes", "")
+            "origin":            origin,
+            "destination":       dest,
+            "date":              date_str,
+            "time":              time_str,
+            "seats":             int(seats),
+            "price_per_person":  float(price),
+            "car_type":          car_type,
+            "car_year":          car_year,
+            "car_color":         car_color,
+            "notes":             notes,
         }
-        # write back to Firestore
-        ride_ref.update(updates)
-        messages.success(request, "Ride updated successfully.")
+
+        # Write back to Firestore
+        try:
+            ride_ref.update(updates)
+            messages.success(request, "Ride updated successfully.")
+        except Exception as e:
+            messages.error(request, f"Failed to update ride: {e}")
+
         return redirect("list_rides")
 
-    # GET → render a template pre-populated with ride data
+    # GET → render form prepopulated with existing ride data
     return render(request, "core/edit_ride.html", {
         "ride": ride,
         "ride_id": ride_id
