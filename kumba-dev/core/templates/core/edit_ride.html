@@ -6,6 +6,12 @@
   <input name="destination"  value="{{ ride.destination }}"  class="form-control" required>
   <input type="date" name="date"  value="{{ ride.date }}"   class="form-control" required>
   <input type="time" name="time"  value="{{ ride.time }}"   class="form-control" required>
+  <input type="seats" name="seats"  value="{{ ride.seats }}"   class="form-control" required>
+  <input type="price_per_person" name="price_per_person"  value="{{ ride.price_per_person }}" class="form-control" required>
+  <input type="car_type" name="car_type"  value="{{ ride.car_type }}"   class="form-control" required>
+  <input type="car_year" name="car_year"  value="{{ ride.car_year }}"   class="form-control" required>
+  <input type="car_color" name="car_color"  value="{{ ride.car_color }}"   class="form-control" required>
+  <input type="notes" name="notes"  value="{{ ride.notes }}"   class="form-control" >
   <!-- etc. for seats, price, car_type, car_year, car_color, notes -->
   <button class="btn btn-primary">Save Changes</button>
 </form>
