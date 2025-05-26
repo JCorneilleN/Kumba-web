@@ -22,6 +22,25 @@ def load_colleges():
         reader = csv.DictReader(f)
         return sorted({row["LocationName"] for row in reader if row.get("LocationName")})
 
+from django.shortcuts import render, redirect
+
+def landing(request):
+    # public homepage
+    return render(request, "core/home.html")
+
+def account(request):
+    # formerly your "home" view
+    if not request.session.get("firebase_user"):
+        return redirect("login")
+    user_ref = db.collection('users').document(request.session['user_id'])
+    user = user_ref.get().to_dict() or {}
+    context = {
+        "name": user.get("first_name"),
+        "dob": user.get("dob"),
+        "email": user.get("email"),
+        "profile_picture": user.get("profile_picture"),
+    }
+    return render(request, "core/account.html", context)
 
 def generate_verification_code():
     return str(random.randint(100000, 999999))
